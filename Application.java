@@ -37,25 +37,58 @@ public class Application {
             r = br.read();
             System.out.println("caractere " + number);
         }
-        Token token = new Token("num", number.toString());
+        Token token = new Token(number.toString(), "snumero");
         lista.add(token);
         return r;
     }
 
+    private static int trataAtribuicao(BufferedReader br) throws IOException {
+        int r = br.read();
+        if (r == 61) {
+            Token token = new Token(":=", "satribuicao");
+            lista.add(token);
+            r = br.read();
+        } else {
+            Token token = new Token(":", "sdoispontos");
+            lista.add(token);
+        }
+        return r;
+    }
+
+    private static int trataAritmetico(int r, BufferedReader br) throws IOException {
+        Token token = new Token("", "");
+        switch (r) {
+            case 42 -> {
+                token.lexema = "*";
+                token.simbolo = "smult";
+            }
+            case 43 -> {
+                token.lexema = "+";
+                token.simbolo = "smais";
+            }
+            case 45 -> {
+                token.lexema = "-";
+                token.simbolo = "smenos";
+            }
+        }
+        lista.add(token);
+        r = br.read();
+        return r;
+    }
+
     private static int pegaToken(int r, BufferedReader br) throws IOException {
+        System.out.println((char) r);
         if (isDigit(r)) {
-            System.out.println("digito " + (char) r);
             r = trataDigito(r, br);
         } else if (isCharacter(r)) {
             System.out.println("caractere " + (char) r);
             r = br.read();
             //trata identificador e palavra reservada
         } else if (isColon(r)) {
-            System.out.println("dois pontos " + (char) r);
-            //trata atribuição
+            r = trataAtribuicao(br);
         } else if (isArithmeticOp(r)) {
             System.out.println("operador aritmético " + (char) r);
-            //trata operador aritmético
+            r = trataAritmetico(r, br);
         } else if (isRelationalOp(r)) {
             System.out.println("operador relacional " + (char) r);
             //trata operador relacional
@@ -97,6 +130,9 @@ public class Application {
         }
         br.close();
         buffer.close();
+        for (int i = 0; i < lista.size(); i++) {
+            System.out.println(i + "\t" + lista.get(i).lexema + "\t" + lista.get(i).simbolo);
+        }
     }
 
     public static class Token {
