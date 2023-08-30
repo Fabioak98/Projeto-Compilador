@@ -3,16 +3,33 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Application {
-    static List<Token> lista = new ArrayList<Token>();
-    private static boolean isDigit (int r) {
+    static List<Token> lista = new ArrayList<>();
+
+    private static boolean isDigit(int r) {
         return r >= 48 && r <= 57;
     }
 
-    private static boolean isCharacter (int r) {
+    private static boolean isCharacter(int r) {
         return (r >= 65 && r <= 90) || (r >= 97 && r <= 122);
     }
 
-    private static int trataDigito (int r, BufferedReader br) throws IOException {
+    private static boolean isColon(int r) {
+        return r == 58;
+    }
+
+    private static boolean isArithmeticOp(int r) {
+        return (r == 42) || (r == 43) || (r == 45);
+    }
+
+    private static boolean isRelationalOp(int r) {
+        return (r == 33) || (r == 60) || (r == 61) || (r == 62);
+    }
+
+    private static boolean isPunctuation(int r) {
+        return (r == 40) || (r == 41) || (r == 44) || (r == 46) || (r == 59);
+    }
+
+    private static int trataDigito(int r, BufferedReader br) throws IOException {
         StringBuilder number = new StringBuilder(String.valueOf((char) r));
         r = br.read();
         while (isDigit(r)) {
@@ -21,11 +38,10 @@ public class Application {
             System.out.println("caractere " + number);
         }
         Token token = new Token("num", number.toString());
-        System.out.println(token.simbolo);
         lista.add(token);
-        System.out.println(lista);
         return r;
     }
+
     private static int pegaToken(int r, BufferedReader br) throws IOException {
         if (isDigit(r)) {
             System.out.println("digito " + (char) r);
@@ -34,16 +50,16 @@ public class Application {
             System.out.println("caractere " + (char) r);
             r = br.read();
             //trata identificador e palavra reservada
-        } else if (r == 58) {
+        } else if (isColon(r)) {
             System.out.println("dois pontos " + (char) r);
             //trata atribuição
-        } else if (r == 42 || r == 43 || r == 45) {
+        } else if (isArithmeticOp(r)) {
             System.out.println("operador aritmético " + (char) r);
             //trata operador aritmético
-        } else if (r == 33 || r == 60 || r == 61 || r == 62) {
+        } else if (isRelationalOp(r)) {
             System.out.println("operador relacional " + (char) r);
             //trata operador relacional
-        } else if (r == 40 || r == 41 || r == 44 || r == 46 || r == 59) {
+        } else if (isPunctuation(r)) {
             System.out.println("pontuação " + (char) r);
             //trata pontuação
         } else {
