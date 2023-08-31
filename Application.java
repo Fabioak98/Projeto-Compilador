@@ -176,6 +176,7 @@ public class Application {
     private static int trataRelacional(int r, BufferedReader br) throws IOException {
         Token token = new Token("", "");
         if (r == 33) {
+            int temp = r;
             r = br.read();
             if (r == 61) {
                 r = br.read();
@@ -184,6 +185,7 @@ public class Application {
             }
             else {
                 System.out.println("ERRO 1 " + (char) r + " " + r);
+                token = trataErro(temp);
             }
         } else if (r == 60) {
             r = br.read();
@@ -242,6 +244,11 @@ public class Application {
         r = br.read();
         return r;
     }
+
+    private static Token trataErro(int r){
+        return new Token(String.valueOf(r),"serro");
+    }
+
     private static int pegaToken(int r, BufferedReader br) throws IOException {
         if (isDigit(r)) {
             r = trataDigito(r, br);
@@ -257,6 +264,8 @@ public class Application {
             r = trataPontuacao(r, br);
         } else {
             System.out.println("ERRO 2 " + (char) r + " " + r);
+            Token token = trataErro(r);
+            lista.add(token);
         }
         return r;
     }
@@ -268,14 +277,14 @@ public class Application {
         BufferedWriter buffer = new BufferedWriter(new FileWriter(filew));
         int r = br.read();
         while (r != -1) {
-            while ((r == 123 || r == 32 || r == 13 || r == 10) && r != -1) {
+            while (r == 123 || r == 32 || r == 13 || r == 10) {
                 if (r == 123) {
                     while (r != 125 && r != -1) {
                         r = br.read();
                     }
                     r = br.read();
                 }
-                while ((r == 32 || r == 13 || r == 10) && r != -1) {
+                while (r == 32 || r == 13 || r == 10) {
                     r = br.read();
                 }
             }
