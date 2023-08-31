@@ -183,7 +183,7 @@ public class Application {
                 token.simbolo = "sdif";
             }
             else {
-                System.out.println("ERRO " + (char) r);
+                System.out.println("ERRO 1 " + (char) r + " " + r);
             }
         } else if (r == 60) {
             r = br.read();
@@ -256,7 +256,7 @@ public class Application {
         } else if (isPunctuation(r)) {
             r = trataPontuacao(r, br);
         } else {
-            System.out.println("ERRO " + (char) r);
+            System.out.println("ERRO 2 " + (char) r + " " + r);
         }
         return r;
     }
@@ -268,29 +268,27 @@ public class Application {
         BufferedWriter buffer = new BufferedWriter(new FileWriter(filew));
         int r = br.read();
         while (r != -1) {
-            while ((r == 123 || r == 32) && r != -1) {
+            while ((r == 123 || r == 32 || r == 13 || r == 10) && r != -1) {
                 if (r == 123) {
                     while (r != 125 && r != -1) {
                         r = br.read();
                     }
                     r = br.read();
                 }
-                while (r == 32 && r != -1) {
+                while ((r == 32 || r == 13 || r == 10) && r != -1) {
                     r = br.read();
                 }
             }
             if (r != -1) {
-                buffer.write(r);
                 r = pegaToken(r, br);
-                //r = br.read();
-                //Inseri lista
             }
         }
         br.close();
-        buffer.close();
         for (int i = 0; i < lista.size(); i++) {
             System.out.println(i + "\t" + lista.get(i).lexema + "\t" + lista.get(i).simbolo);
+            buffer.write(i + "\t" + lista.get(i).lexema + "\t" + lista.get(i).simbolo + "\n");
         }
+        buffer.close();
     }
 
     public static class Token {
