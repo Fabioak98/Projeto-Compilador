@@ -1,1 +1,3 @@
-123:=123
+se contador > 10 { exemplo de comentário }
+entao escreva (contador)
+senao escreva (x);

@@ -35,9 +35,106 @@ public class Application {
         while (isDigit(r)) {
             number.append((char) r);
             r = br.read();
-            System.out.println("caractere " + number);
         }
         Token token = new Token(number.toString(), "snumero");
+        lista.add(token);
+        return r;
+    }
+
+    private static int trataPalavra(int r, BufferedReader br) throws IOException {
+        StringBuilder word = new StringBuilder(String.valueOf((char) r));
+        Token token = new Token("", "");
+        r = br.read();
+        while (isCharacter(r) || isDigit(r) || (r == 95)) {
+            word.append((char) r);
+            r = br.read();
+        }
+        switch (word.toString()) {
+            case "programa" -> {
+                token.lexema = "programa";
+                token.simbolo = "sprograma";
+            }
+            case "se" -> {
+                token.lexema = "se";
+                token.simbolo = "sse";
+            }
+            case "entao" -> {
+                token.lexema = "entao";
+                token.simbolo = "sentao";
+            }
+            case "senao" -> {
+                token.lexema = "senao";
+                token.simbolo = "ssenao";
+            }
+            case "enquanto" -> {
+                token.lexema = "enquanto";
+                token.simbolo = "senquanto";
+            }
+            case "faca" -> {
+                token.lexema = "faca";
+                token.simbolo = "sfaca";
+            }
+            case "fim" -> {
+                token.lexema = "fim";
+                token.simbolo = "sfim";
+            }
+            case "escreva" -> {
+                token.lexema = "escreva";
+                token.simbolo = "sescreva";
+            }
+            case "leia" -> {
+                token.lexema = "leia";
+                token.simbolo = "sleia";
+            }
+            case "var" -> {
+                token.lexema = "var";
+                token.simbolo = "svar";
+            }
+            case "inteiro" -> {
+                token.lexema = "inteiro";
+                token.simbolo = "sinteiro";
+            }
+            case "booleano" -> {
+                token.lexema = "booleano";
+                token.simbolo = "sbooleano";
+            }
+            case "verdadeiro" -> {
+                token.lexema = "verdadeiro";
+                token.simbolo = "sverdadeiro";
+            }
+            case "falso" -> {
+                token.lexema = "falso";
+                token.simbolo = "sfalso";
+            }
+            case "procedimento" -> {
+                token.lexema = "procedimento";
+                token.simbolo = "sprocedimento";
+            }
+            case "funcao" -> {
+                token.lexema = "funcao";
+                token.simbolo = "sfuncao";
+            }
+            case "div" -> {
+                token.lexema = "div";
+                token.simbolo = "sdiv";
+            }
+            case "e" -> {
+                token.lexema = "e";
+                token.simbolo = "se";
+            }
+            case "ou" -> {
+                token.lexema = "ou";
+                token.simbolo = "sou";
+            }
+            case "nao" -> {
+                token.lexema = "nao";
+                token.simbolo = "snao";
+            }
+            default -> {
+                token.lexema = word.toString();
+                token.simbolo = "sidentificador";
+            }
+        }
         lista.add(token);
         return r;
     }
@@ -76,28 +173,90 @@ public class Application {
         return r;
     }
 
+    private static int trataRelacional(int r, BufferedReader br) throws IOException {
+        Token token = new Token("", "");
+        if (r == 33) {
+            r = br.read();
+            if (r == 61) {
+                r = br.read();
+                token.lexema = "!=";
+                token.simbolo = "sdif";
+            }
+            else {
+                System.out.println("ERRO " + (char) r);
+            }
+        } else if (r == 60) {
+            r = br.read();
+            if (r == 61) {
+                r = br.read();
+                token.lexema = "<=";
+                token.simbolo = "smenorig";
+            } else {
+                token.lexema = "<";
+                token.simbolo = "smenor";
+            }
+        } else if (r == 61) {
+            r = br.read();
+            token.lexema = "=";
+            token.simbolo = "sig";
+        } else if (r == 62) {
+            r = br.read();
+            if (r == 61) {
+                r = br.read();
+                token.lexema = ">=";
+                token.simbolo = "smaiorig";
+            } else {
+                token.lexema = ">";
+                token.simbolo = "smaior";
+            }
+        }
+        lista.add(token);
+        return r;
+    }
+
+    private static int trataPontuacao(int r, BufferedReader br) throws IOException {
+        Token token = new Token("", "");
+        switch (r) {
+            case 40 -> {
+                token.lexema = "(";
+                token.simbolo = "sabre_parenteses";
+            }
+            case 41 -> {
+                token.lexema = ")";
+                token.simbolo = "sfecha_parenteses";
+            }
+            case 44 -> {
+                token.lexema = ",";
+                token.simbolo = "svirgula";
+            }
+            case 46 -> {
+                token.lexema = ".";
+                token.simbolo = "sponto";
+            }
+            case 59 -> {
+                token.lexema = ";";
+                token.simbolo = "sponto_virgula";
+            }
+        }
+        lista.add(token);
+        r = br.read();
+        return r;
+    }
     private static int pegaToken(int r, BufferedReader br) throws IOException {
-        System.out.println((char) r);
         if (isDigit(r)) {
             r = trataDigito(r, br);
         } else if (isCharacter(r)) {
-            System.out.println("caractere " + (char) r);
-            r = br.read();
-            //trata identificador e palavra reservada
+            r = trataPalavra(r, br);
         } else if (isColon(r)) {
             r = trataAtribuicao(br);
         } else if (isArithmeticOp(r)) {
-            System.out.println("operador aritmético " + (char) r);
             r = trataAritmetico(r, br);
         } else if (isRelationalOp(r)) {
-            System.out.println("operador relacional " + (char) r);
-            //trata operador relacional
+            r = trataRelacional(r, br);
         } else if (isPunctuation(r)) {
-            System.out.println("pontuação " + (char) r);
-            //trata pontuação
+            r = trataPontuacao(r, br);
         } else {
-            System.out.println("erro " + (char) r);
-            // erro
+            System.out.println("ERRO " + (char) r);
         }
         return r;
     }
@@ -108,7 +267,6 @@ public class Application {
         var filew = new File("test.txt");
         BufferedWriter buffer = new BufferedWriter(new FileWriter(filew));
         int r = br.read();
-        System.out.println((char) r);
         while (r != -1) {
             while ((r == 123 || r == 32) && r != -1) {
                 if (r == 123) {
