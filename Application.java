@@ -130,6 +130,10 @@ public class Application {
                 token.lexema = "nao";
                 token.simbolo = "snao";
             }
+            case "inicio" -> {
+                token.lexema = "inicio";
+                token.simbolo = "sinicio";
+            }
             default -> {
                 token.lexema = word.toString();
                 token.simbolo = "sidentificador";
