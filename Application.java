@@ -270,6 +270,7 @@ public class Application {
             System.out.println("ERRO 2 " + (char) r + " " + r);
             Token token = trataErro(r);
             lista.add(token);
+            r = br.read();
         }
         return r;
     }
