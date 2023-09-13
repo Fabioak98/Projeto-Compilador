@@ -299,8 +299,9 @@ public class Application {
         }
         br.close();
         for (int i = 0; i < lista.size(); i++) {
-            System.out.println(i + "\t" + lista.get(i).lexema + "\t" + lista.get(i).simbolo);
-            buffer.write(i + "\t" + lista.get(i).lexema + "\t" + lista.get(i).simbolo + "\n");
+            String formattedOutput = String.format("%d\t%-15s%-15s", i, lista.get(i).lexema, lista.get(i).simbolo);
+            System.out.println(formattedOutput);
+            buffer.write(formattedOutput + "\n");
         }
         buffer.close();
     }
