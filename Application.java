@@ -188,8 +188,8 @@ public class Application {
                 token.simbolo = "sdif";
             }
             else {
-                System.out.println("ERRO 1 " + (char) r + " " + r);
-                token = trataErro(temp);
+                System.out.println("ERRO 1 " + (char) temp + " " + temp);
+                trataErro(temp, "Carácter inválido " + '"' + (char) temp + '"');
             }
         } else if (r == 60) {
             r = br.read();
@@ -249,8 +249,9 @@ public class Application {
         return r;
     }
 
-    private static Token trataErro(int r){
-        return new Token(String.valueOf(r),"serro");
+    private static void trataErro(int r, String error){
+        Token token = new Token(String.valueOf(r),error);
+        lista.add(token);
     }
 
     private static int pegaToken(int r, BufferedReader br) throws IOException {
@@ -267,16 +268,15 @@ public class Application {
         } else if (isPunctuation(r)) {
             r = trataPontuacao(r, br);
         } else {
-            System.out.println("ERRO 2 " + (char) r + " " + r);
-            Token token = trataErro(r);
-            lista.add(token);
+            System.out.println("Carácter inválido " + (char) r + " " + r);
+            trataErro(r, "Carácter inválido " + '"' + (char) r + '"');
             r = br.read();
         }
         return r;
     }
 
     public static void main(String[] args) throws IOException {
-        var filep = new File("programa.txt");
+        var filep = new File("tests/lexical/teste_10.txt");
         BufferedReader br = new BufferedReader(new FileReader(filep));
         var filew = new File("test.txt");
         BufferedWriter buffer = new BufferedWriter(new FileWriter(filew));
@@ -300,7 +300,7 @@ public class Application {
         br.close();
         for (int i = 0; i < lista.size(); i++) {
             String formattedOutput = String.format("%d\t%-15s%-15s", i, lista.get(i).lexema, lista.get(i).simbolo);
-            System.out.println(formattedOutput);
+            //System.out.println(formattedOutput);
             buffer.write(formattedOutput + "\n");
         }
         buffer.close();
