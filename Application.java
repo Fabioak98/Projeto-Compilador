@@ -276,21 +276,30 @@ public class Application {
     }
 
     public static void main(String[] args) throws IOException {
-        var filep = new File("tests/lexical/teste_10.txt");
+        var filep = new File("tests/lexical/teste_6.txt");
         BufferedReader br = new BufferedReader(new FileReader(filep));
-        var filew = new File("test.txt");
+        var filew = new File("test6.txt");
         BufferedWriter buffer = new BufferedWriter(new FileWriter(filew));
+        int line = 1;
         int r = br.read();
         while (r != -1) {
-            while (r == 123 || r == 32 || r == 13 || r == 10) {
+            while (r == 123 || r == 32 || r == 13 || r == 10 || r == 9) {
                 if (r == 123) {
                     while (r != 125 && r != -1) {
                         r = br.read();
                     }
+                    if (r == -1) {
+                        trataErro(r, "Comentário não fechado, linha " + line);
+                        System.out.println("Comentário não fechado, linha " + line);
+                    }
                     r = br.read();
                 }
-                while (r == 32 || r == 13 || r == 10) {
+                while (r == 32 || r == 13 || r == 9) {
                     r = br.read();
+                }
+                if (r == 10) {
+                    r = br.read();
+                    line ++;
                 }
             }
             if (r != -1) {
