@@ -373,6 +373,22 @@ public class Application {
 
         if (container.token.simbolo.equals("sinicio")){
             container = analisadorLexical(container.read, lr);
+            container = analisaComandoSimples(container.read,container.token,lr);
+            while(!container.token.equals("sfim")){
+                if(container.token.simbolo.equals("sponto_virgula")){
+                    container = analisadorLexical(container.read,lr);
+                    if(!container.equals("sfim")){
+                        container = analisaComandoSimples(container.read,container.token,lr);
+                    }
+                }
+                else{
+                    System.out.println("Error not sponto_virgula");
+                }
+            }
+            container = analisadorLexical(container.read,lr);
+        }
+        else{
+            System.out.println("Error not sinicio");
         }
 
         return container;
@@ -382,7 +398,7 @@ public class Application {
         Container container = new Container(token, r);
 
         if (container.token.simbolo.equals("sidentificador")){
-            //container = analisaAtribChProcedimento();
+            container = analisaAtribChProcedimento(container.read,container.token,lr);
         }else if (container.token.equals("sse")){
             //container = analisaSe();
         }else if (container.token.equals("senquanto")){
@@ -401,11 +417,12 @@ public class Application {
 
         container = analisadorLexical(container.read, lr);
         if (container.token.simbolo.equals("satribuicao")){
-            //contaienr = analisaAtribuicao();
+            //container = analisaAtribuicao(container.read,lr);
         }//else container = chamadaProcedimento();
 
         return container;
     }
+
 
     public static Container analisaLeia(int r, Token token, LineNumberReader lr) throws IOException {
         Container container = new Container(token, r);
@@ -436,7 +453,7 @@ public class Application {
                 if (container.token.simbolo.equals("sfecha_parenteses")){
                     container = analisadorLexical(container.read, lr);
                 }else System.out.println("erro not sfecha_parenteses");
-            }else System.out.println("erro nor sidentificador");
+            }else System.out.println("erro not sidentificador");
         }else System.out.println("erro not sabre_parenteses");
 
         return container;
@@ -446,27 +463,61 @@ public class Application {
         Container container = new Container(token,r);
         while(container.token.simbolo.equals("sprocedimento") || container.token.simbolo.equals("sfuncao")){
             if(container.token.simbolo.equals("sprocedimento")){
-                container = analisaDeclaracaoProcedimento(container,lr);
+                container = analisaDeclaracaoProcedimento(container.read,lr);
             }
             else{
-                container = analisaDeclaracaoFuncao(container,lr);
+                container = analisaDeclaracaoFuncao(container.read,lr);
             }
             if(container.token.simbolo.equals("sponto_virgula")){
                 container = analisadorLexical(container.read,lr);
             }
             else{
-                throw new IOException();
+                System.out.println("Error not sponto_virgula");
             }
         }
         return container;
     }
 
-    private static Container analisaDeclaracaoFuncao(Container container, LineNumberReader lr) {
-
+    private static Container analisaDeclaracaoFuncao(int r, LineNumberReader lr) throws IOException {
+        Container container = analisadorLexical(r,lr);
+        if(container.token.simbolo.equals("sidentificador")){
+            container = analisadorLexical(container.read,lr);
+            if (container.token.simbolo.equals("sdoispontos")){
+                container = analisadorLexical(container.read,lr);
+                if(container.token.simbolo.equals("sinteiro") || container.token.simbolo.equals("sbooleano")){
+                    container = analisadorLexical(container.read,lr);
+                    if (container.token.simbolo.equals("sponto_virgula")){
+                        container = analisaBloco(container.read,lr);
+                    }
+                }
+                else{
+                    System.out.println("Error not stipo");
+                }
+            }
+            else{
+                System.out.println("Error not sdoispontos");
+            }
+        }
+        else{
+            System.out.println("Error not sidentificador");
+        }
         return container;
     }
 
-    private static Container analisaDeclaracaoProcedimento(Container container, BufferedReader lr) {
+    private static Container analisaDeclaracaoProcedimento(int r, LineNumberReader lr) throws IOException{
+        Container container = analisadorLexical(r,lr);
+        if(container.token.simbolo.equals("sidentificador")){
+            container = analisadorLexical(container.read,lr);
+            if(container.token.simbolo.equals("sponto_virgula")){
+                container = analisaBloco(container.read,lr);
+            }
+            else{
+                System.out.println("Error not spontovirgula");
+            }
+        }
+        else{
+            System.out.println("Error not sidentificador");
+        }
         return container;
     }
 
@@ -474,7 +525,7 @@ public class Application {
         Container container = analisadorLexical(r, lr);
         container = analisaEtVariaveis(container.read,container.token,lr);//analisa_et_variaveis
         container = analisaSubrotina(container.read,container.token,lr);//analisa_subrotinas
-        //analisa_comandos
+        container = analisaComandos(container.read,container.token,lr);//analisa_comandos
         return container;
     }
 
@@ -552,6 +603,10 @@ public class Application {
         public Container(Token token, int read) {
             this.token = token;
             this.read = read;
+        }
+
+        public Boolean equals(String simbolo){
+            return this.token.simbolo.equals(simbolo);
         }
     }
 
