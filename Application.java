@@ -4,6 +4,9 @@ import java.util.List;
 
 public class Application {
     static List<Token> lista = new ArrayList<>();
+    static List<simboloCSD> tabelaSimbolos = new ArrayList<simboloCSD>();
+
+    /* Testing functions */
 
     private static boolean isDigit(int r) {
         return r >= 48 && r <= 57;
@@ -29,25 +32,25 @@ public class Application {
         return (r == 40) || (r == 41) || (r == 44) || (r == 46) || (r == 59);
     }
 
-    private static int trataDigito(int r, BufferedReader br) throws IOException {
+    /* Lexical analyser functions */
+
+    private static Container trataDigito(int r, LineNumberReader lr) throws IOException {
         StringBuilder number = new StringBuilder(String.valueOf((char) r));
-        r = br.read();
+        r = lr.read();
         while (isDigit(r)) {
             number.append((char) r);
-            r = br.read();
+            r = lr.read();
         }
-        Token token = new Token(number.toString(), "snumero");
-        lista.add(token);
-        return r;
+        return new Container(new Token(number.toString(), "snumero"), r);
     }
 
-    private static int trataPalavra(int r, BufferedReader br) throws IOException {
+    private static Container trataPalavra(int r, LineNumberReader lr) throws IOException {
         StringBuilder word = new StringBuilder(String.valueOf((char) r));
         Token token = new Token("", "");
-        r = br.read();
+        r = lr.read();
         while (isCharacter(r) || isDigit(r) || (r == 95)) {
             word.append((char) r);
-            r = br.read();
+            r = lr.read();
         }
         switch (word.toString()) {
             case "programa" -> {
@@ -139,24 +142,24 @@ public class Application {
                 token.simbolo = "sidentificador";
             }
         }
-        lista.add(token);
-        return r;
+        return new Container(token, r);
     }
 
-    private static int trataAtribuicao(BufferedReader br) throws IOException {
-        int r = br.read();
+    private static Container trataAtribuicao(LineNumberReader lr) throws IOException {
+        int r = lr.read();
+        Token token = new Token("","");
         if (r == 61) {
-            Token token = new Token(":=", "satribuicao");
-            lista.add(token);
-            r = br.read();
+            token.lexema = ":=";
+            token.simbolo = "satribuicao";
+            r = lr.read();
         } else {
-            Token token = new Token(":", "sdoispontos");
-            lista.add(token);
+            token.lexema = ":";
+            token.simbolo = "sdoispontos";
         }
-        return r;
+        return new Container(token, r);
     }
 
-    private static int trataAritmetico(int r, BufferedReader br) throws IOException {
+    private static Container trataAritmetico(int r, LineNumberReader lr) throws IOException {
         Token token = new Token("", "");
         switch (r) {
             case 42 -> {
@@ -172,18 +175,17 @@ public class Application {
                 token.simbolo = "smenos";
             }
         }
-        lista.add(token);
-        r = br.read();
-        return r;
+        r = lr.read();
+        return new Container(token, r);
     }
 
-    private static int trataRelacional(int r, BufferedReader br) throws IOException {
+    private static Container trataRelacional(int r, LineNumberReader lr) throws IOException {
         Token token = new Token("", "");
         if (r == 33) {
             int temp = r;
-            r = br.read();
+            r = lr.read();
             if (r == 61) {
-                r = br.read();
+                r = lr.read();
                 token.lexema = "!=";
                 token.simbolo = "sdif";
             }
@@ -192,9 +194,9 @@ public class Application {
                 trataErro(temp, "Carácter inválido " + '"' + (char) temp + '"');
             }
         } else if (r == 60) {
-            r = br.read();
+            r = lr.read();
             if (r == 61) {
-                r = br.read();
+                r = lr.read();
                 token.lexema = "<=";
                 token.simbolo = "smenorig";
             } else {
@@ -202,13 +204,13 @@ public class Application {
                 token.simbolo = "smenor";
             }
         } else if (r == 61) {
-            r = br.read();
+            r = lr.read();
             token.lexema = "=";
             token.simbolo = "sig";
         } else if (r == 62) {
-            r = br.read();
+            r = lr.read();
             if (r == 61) {
-                r = br.read();
+                r = lr.read();
                 token.lexema = ">=";
                 token.simbolo = "smaiorig";
             } else {
@@ -216,11 +218,10 @@ public class Application {
                 token.simbolo = "smaior";
             }
         }
-        lista.add(token);
-        return r;
+        return new Container(token, r);
     }
 
-    private static int trataPontuacao(int r, BufferedReader br) throws IOException {
+    private static Container trataPontuacao(int r, LineNumberReader lr) throws IOException {
         Token token = new Token("", "");
         switch (r) {
             case 40 -> {
@@ -244,9 +245,8 @@ public class Application {
                 token.simbolo = "sponto_virgula";
             }
         }
-        lista.add(token);
-        r = br.read();
-        return r;
+        r = lr.read();
+        return new Container(token, r);
     }
 
     private static void trataErro(int r, String error){
@@ -254,65 +254,173 @@ public class Application {
         lista.add(token);
     }
 
-    private static int pegaToken(int r, BufferedReader br) throws IOException {
+    private static Container pegaToken(int r, LineNumberReader lr) throws IOException {
+        Container container = new Container(new Token("", ""), r);
         if (isDigit(r)) {
-            r = trataDigito(r, br);
+            container = trataDigito(r, lr);
         } else if (isCharacter(r)) {
-            r = trataPalavra(r, br);
+            container = trataPalavra(r, lr);
         } else if (isColon(r)) {
-            r = trataAtribuicao(br);
+            container = trataAtribuicao(lr);
         } else if (isArithmeticOp(r)) {
-            r = trataAritmetico(r, br);
+            container = trataAritmetico(r, lr);
         } else if (isRelationalOp(r)) {
-            r = trataRelacional(r, br);
+            container = trataRelacional(r, lr);
         } else if (isPunctuation(r)) {
-            r = trataPontuacao(r, br);
+            container = trataPontuacao(r, lr);
         } else {
             System.out.println("Carácter inválido " + (char) r + " " + r);
             trataErro(r, "Carácter inválido " + '"' + (char) r + '"');
-            r = br.read();
+            container.read = lr.read();
         }
-        return r;
+        return container;
+    }
+
+    public static Container analisadorLexical(int r, LineNumberReader lr) throws IOException {
+        Container container = new Container(new Token("", ""), r);
+        int curLine;
+        while (r == 123 || r == 32 || r == 13 || r == 10 || r == 9) {
+            if (r == 123) {
+                curLine = lr.getLineNumber() + 1;
+                while (r != 125 && r != -1) {
+                    r = lr.read();
+                }
+                if (r == -1) {
+                    trataErro(r, "Comentário não fechado, linha " + curLine);
+                    System.out.println("Comentário não fechado, linha " + curLine);
+                }
+                r = lr.read();
+            }
+            while (r == 32 || r == 13 || r == 9 || r == 10) {
+                r = lr.read();
+            }
+        }
+        if (r != -1) {
+            container = pegaToken(r, lr);
+        }
+        return container;
+    }
+
+    /* Tabela de simbolos CSD */
+
+    public static void insereTabela (String nome, String escopo, String tipo, String memoria) {
+        tabelaSimbolos.add(new simboloCSD(nome, escopo, tipo, memoria));
+    }
+
+    public static void consultaTabela (String nome) {
+
+    }
+
+    public static void colocaTipo (String nome, String tipo) {
+
+    }
+
+    /* Syntax analyzer functions */
+
+    public static Container analisaEtVariaveis (int r, Token token, LineNumberReader lr) throws IOException {
+        Container container = null;
+        if (token.simbolo.equals("svar")) {
+            container = analisadorLexical(r, lr);
+            if (container.token.simbolo.equals("sidentificador")) {
+                while (container.token.simbolo.equals("sidentificador")) {
+                    // analisa variaveis
+                    if (container.token.simbolo.equals("spontvirg")) {
+                        container = analisadorLexical(container.read, lr);
+                    } else {
+                        System.out.println("Error not spontvirg");
+                    }
+                }
+            }
+            else {
+                System.out.println("Error not sidentificador");
+            }
+        }
+        return container;
+    }
+
+    public static Container analisaBloco (int r, LineNumberReader lr) throws IOException {
+        Container container = analisadorLexical(r, lr);
+        //analisa_et_variaveis
+        //analisa_subrotinas
+        //analisa_comandos
+        return container;
+    }
+
+    public static Container analisadorSintatico(int r, LineNumberReader lr) throws IOException {
+        int label = 1;
+        Container container = analisadorLexical(r, lr);
+        if (container.token.simbolo.equals("sprograma")) {
+            container = analisadorLexical(container.read, lr);
+            if (container.token.simbolo.equals("sidentificador")) {
+                insereTabela(container.token.lexema,"nomedeprograma","","");
+                container = analisadorLexical(container.read, lr);
+                if (container.token.simbolo.equals("spontovirgula")) {
+                    //analisa_bloco
+                    if (container.token.simbolo.equals("sponto")) {
+                        if (container.read == -1 || container.read == 123) {
+                            System.out.println("SUCCESS");
+                        }
+                        else {
+                            System.out.println("Error not EOF or comment");
+                        }
+                    }
+                    else {
+                        System.out.println("Error not sponto");
+                    }
+                }
+                else {
+                    System.out.println("Error not spontovirgula");
+                }
+            }
+            else {
+                System.out.println("Error not sidentificador");
+            }
+        }
+        else {
+            System.out.println("Error not sprograma");
+        }
+        return container;
     }
 
     public static void main(String[] args) throws IOException {
         var filep = new File("tests/lexical/teste_6.txt");
-        BufferedReader br = new BufferedReader(new FileReader(filep));
+        LineNumberReader lr = new LineNumberReader(new FileReader(filep));
         var filew = new File("test6.txt");
         BufferedWriter buffer = new BufferedWriter(new FileWriter(filew));
-        int line = 1;
-        int r = br.read();
-        while (r != -1) {
-            while (r == 123 || r == 32 || r == 13 || r == 10 || r == 9) {
-                if (r == 123) {
-                    while (r != 125 && r != -1) {
-                        r = br.read();
-                    }
-                    if (r == -1) {
-                        trataErro(r, "Comentário não fechado, linha " + line);
-                        System.out.println("Comentário não fechado, linha " + line);
-                    }
-                    r = br.read();
-                }
-                while (r == 32 || r == 13 || r == 9) {
-                    r = br.read();
-                }
-                if (r == 10) {
-                    r = br.read();
-                    line ++;
-                }
-            }
-            if (r != -1) {
-                r = pegaToken(r, br);
-            }
-        }
-        br.close();
+        int r = lr.read();
+        Container container = analisadorLexical(r, lr);
+        lr.close();
         for (int i = 0; i < lista.size(); i++) {
             String formattedOutput = String.format("%d\t%-15s%-15s", i, lista.get(i).lexema, lista.get(i).simbolo);
             //System.out.println(formattedOutput);
             buffer.write(formattedOutput + "\n");
         }
         buffer.close();
+    }
+
+
+    public static class simboloCSD {
+        String nome;
+        String escopo;
+        String tipo;
+        String memoria;
+
+        public simboloCSD(String nome, String escopo, String tipo, String memoria) {
+            this.nome = nome;
+            this.escopo = escopo;
+            this.tipo = tipo;
+            this.memoria = memoria;
+        }
+    }
+
+    public static class Container {
+        Token token;
+        int read;
+
+        public Container(Token token, int read) {
+            this.token = token;
+            this.read = read;
+        }
     }
 
     public static class Token {
