@@ -400,14 +400,14 @@ public class Application {
         if (container.token.simbolo.equals("sidentificador")){
             container = analisaAtribChProcedimento(container.read,container.token,lr);
         }else if (container.token.equals("sse")){
-            //container = analisaSe();
+            container = analisaSe(container.read, container.token, lr);
         }else if (container.token.equals("senquanto")){
-            //container = analisaEnquanto();
+            container = analisaEnquanto(container.read, container.token, lr);
         }else if (container.token.equals("sleia")){
-            //container = analisaLeia();
+            container = analisaLeia(container.read, container.token, lr);
         }else if (container.token.equals("sescreva")){
-            //container = analisaEscreva();
-        }//else container = analisaComandos();
+            container = analisaEscreva(container.read, container.token, lr);
+        }else container = analisaComandos(container.read, container.token, lr);
 
         return container;
     }
@@ -455,6 +455,104 @@ public class Application {
                 }else System.out.println("erro not sfecha_parenteses");
             }else System.out.println("erro not sidentificador");
         }else System.out.println("erro not sabre_parenteses");
+
+        return container;
+    }
+
+    public static Container analisaEnquanto(int r, Token token, LineNumberReader lr) throws IOException {
+        Container container = new Container(token, r);
+
+        container = analisadorLexical(container.read, lr);
+
+        //analisaExpressao()
+        if (container.token.simbolo.equals("sfaca")){
+            container = analisadorLexical(container.read, lr);
+            container = analisaComandoSimples(container.read,container.token,lr);
+        }else System.out.println("erro not sfaca");
+
+        return container;
+    }
+
+    public static Container analisaSe(int r, Token token, LineNumberReader lr) throws IOException {
+        Container container = new Container(token, r);
+
+        container = analisadorLexical(container.read, lr);
+
+        //analisaExpressao()
+        if (container.token.simbolo.equals("sentao")){
+            container = analisadorLexical(container.read, lr);
+            container = analisaComandoSimples(container.read,container.token,lr);
+            if (container.token.simbolo.equals("ssenao")){
+                container = analisadorLexical(container.read, lr);
+                container = analisaComandoSimples(container.read,container.token,lr);
+            }
+        }else System.out.println("erro nor sentao");
+
+        return  container;
+    }
+
+    public static Container analisaExpressao(int r, Token token, LineNumberReader lr) throws IOException {
+        Container container = new Container(token, r);
+
+        container = analisadorLexical(container.read, lr);
+
+        //analisaExpressaoSimples();
+        if (container.token.simbolo.equals("smaior") || container.token.simbolo.equals("smaiorig") ||
+                container.token.simbolo.equals("smenor") || container.token.simbolo.equals("smenorig")
+                || container.token.simbolo.equals("sig") || container.token.simbolo.equals("sdif")){
+            container = analisadorLexical(container.read, lr);
+            container = analisaExpressaoSimples(container.read, container.token, lr);
+        }
+
+        return container;
+    }
+
+    public static Container analisaExpressaoSimples(int r, Token token, LineNumberReader lr) throws IOException{
+        Container container = new Container(token, r);
+
+        if (container.token.simbolo.equals("smais") || container.token.simbolo.equals("smenos")){
+            container = analisadorLexical(container.read, lr);
+            container = analisaTermo(container.read, container.token, lr);
+            while (container.token.simbolo.equals("smais") || container.token.simbolo.equals("smenos") || container.token.simbolo.equals("sou")){
+                container = analisadorLexical(container.read, lr);
+                container = analisaTermo(container.read, container.token, lr);
+            }
+        }
+
+        return container;
+    }
+
+    public static Container analisaTermo(int r, Token token, LineNumberReader lr) throws IOException{
+        Container container = new Container(token, r);
+
+        container = analisaFator(container.read, container.token, lr);
+        while (container.token.simbolo.equals("smult") || container.token.simbolo.equals("sdiv") ||container.token.simbolo.equals("se")){
+            container = analisadorLexical(container.read, lr);
+            container = analisaFator(container.read, container.token, lr);
+        }
+
+        return container;
+    }
+
+    public static Container analisaFator(int r, Token token, LineNumberReader lr) throws IOException{
+        Container container = new Container(token, r);
+
+        if (container.token.simbolo.equals("sidentificador")){
+            //container = analisaChamadaFuncao();
+        } else if (container.token.simbolo.equals("snumero")) {
+            container = analisadorLexical(container.read, lr);
+        } else if (container.token.simbolo.equals("snao")) {
+            container = analisadorLexical(container.read, lr);
+            container = analisaFator(container.read, container.token, lr);
+        } else if (container.token.simbolo.equals("sabre_parenteses")) {
+            container = analisadorLexical(container.read, lr);
+            container = analisaExpressao(container.read, container.token, lr);
+            if (container.token.simbolo.equals("sfecha_parenteses")){
+                container = analisadorLexical(container.read, lr);
+            }else System.out.println("erro not sfecha_parenteses");
+        } else if (container.token.lexema.equals("verdadeiro") || container.token.lexema.equals("falso")) {
+            container = analisadorLexical(container.read, lr);
+        }else System.out.println("erro lexema not verdadeiro ou falso");
 
         return container;
     }
