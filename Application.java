@@ -417,8 +417,36 @@ public class Application {
 
         container = analisadorLexical(container.read, lr);
         if (container.token.simbolo.equals("satribuicao")){
-            //container = analisaAtribuicao(container.read,lr);
-        }//else container = chamadaProcedimento();
+            container = analisaAtribuicao(container.read, container.token, lr);
+        }else container = analisaChamadaProcedimento(container.read, container.token, lr);
+
+        return container;
+    }
+
+    public static Container analisaAtribuicao(int r, Token token, LineNumberReader lr) throws IOException {
+        Container container = new Container(token, r);
+
+        container = analisadorLexical(container.read, lr);
+        container = analisaExpressao(container.read, container.token, lr);
+
+        return container;
+    }
+
+    public static Container analisaChamadaProcedimento(int r, Token token, LineNumberReader lr) throws IOException {
+        Container container = new Container(token, r);
+
+        container = analisadorLexical(container.read, lr);
+        container = analisaDeclaracaoProcedimento(container.read, lr);
+
+        return container;
+    }
+
+    public static Container analisaChamadaFuncao(int r, Token token, LineNumberReader lr) throws IOException {
+        Container container = new Container(token, r);
+
+        container = analisadorLexical(container.read, lr);
+        container = analisaDeclaracaoFuncao(container.read, lr);
+
 
         return container;
     }
@@ -464,7 +492,7 @@ public class Application {
 
         container = analisadorLexical(container.read, lr);
 
-        //analisaExpressao()
+        container = analisaExpressao(container.read, container.token, lr);
         if (container.token.simbolo.equals("sfaca")){
             container = analisadorLexical(container.read, lr);
             container = analisaComandoSimples(container.read,container.token,lr);
@@ -478,7 +506,7 @@ public class Application {
 
         container = analisadorLexical(container.read, lr);
 
-        //analisaExpressao()
+        container = analisaExpressao(container.read, container.token, lr);
         if (container.token.simbolo.equals("sentao")){
             container = analisadorLexical(container.read, lr);
             container = analisaComandoSimples(container.read,container.token,lr);
@@ -486,7 +514,7 @@ public class Application {
                 container = analisadorLexical(container.read, lr);
                 container = analisaComandoSimples(container.read,container.token,lr);
             }
-        }else System.out.println("erro nor sentao");
+        }else System.out.println("erro not sentao");
 
         return  container;
     }
@@ -496,7 +524,7 @@ public class Application {
 
         container = analisadorLexical(container.read, lr);
 
-        //analisaExpressaoSimples();
+        container = analisaExpressaoSimples(container.read, container.token, lr);
         if (container.token.simbolo.equals("smaior") || container.token.simbolo.equals("smaiorig") ||
                 container.token.simbolo.equals("smenor") || container.token.simbolo.equals("smenorig")
                 || container.token.simbolo.equals("sig") || container.token.simbolo.equals("sdif")){
@@ -538,7 +566,7 @@ public class Application {
         Container container = new Container(token, r);
 
         if (container.token.simbolo.equals("sidentificador")){
-            //container = analisaChamadaFuncao();
+            container = analisaChamadaFuncao(container.read, container.token, lr);
         } else if (container.token.simbolo.equals("snumero")) {
             container = analisadorLexical(container.read, lr);
         } else if (container.token.simbolo.equals("snao")) {
