@@ -341,12 +341,14 @@ public class Application {
     private static Container analisaVariaveis(int r, Token token, LineNumberReader lr) throws IOException{
         Container container = new Container(token,r);
         while(!container.token.simbolo.equals("sdoispontos")){
-            container = analisadorLexical(container.read,lr);
-            if(container.token.simbolo.equals("svirgula") || container.token.simbolo.equals("sdoispontos")){
-                if (container.token.simbolo.equals("svirgula")){
-                    container = analisadorLexical(container.read,lr);
-                    if(container.token.simbolo.equals("sdoispontos")){
-                        System.out.println("ERRO dois pontos");
+            if (container.equals("sidentificador")){
+                container = analisadorLexical(container.read,lr);
+                if(container.token.simbolo.equals("svirgula") || container.token.simbolo.equals("sdoispontos")){
+                    if (container.token.simbolo.equals("svirgula")){
+                        container = analisadorLexical(container.read,lr);
+                        if(container.token.simbolo.equals("sdoispontos")){
+                            System.out.println("Error not sdoispontos");
+                        }
                     }
                 }
             }
@@ -374,7 +376,7 @@ public class Application {
         if (container.token.simbolo.equals("sinicio")){
             container = analisadorLexical(container.read, lr);
             container = analisaComandoSimples(container.read,container.token,lr);
-            while(!container.token.equals("sfim")){
+            while(!container.equals("sfim")){
                 if(container.token.simbolo.equals("sponto_virgula")){
                     container = analisadorLexical(container.read,lr);
                     if(!container.equals("sfim")){
@@ -383,6 +385,7 @@ public class Application {
                 }
                 else{
                     System.out.println("Error not sponto_virgula");
+                    container = analisadorLexical(container.read, lr);
                 }
             }
             container = analisadorLexical(container.read,lr);
@@ -399,13 +402,13 @@ public class Application {
 
         if (container.token.simbolo.equals("sidentificador")){
             container = analisaAtribChProcedimento(container.read,container.token,lr);
-        }else if (container.token.equals("sse")){
+        }else if (container.equals("sse")){
             container = analisaSe(container.read, container.token, lr);
-        }else if (container.token.equals("senquanto")){
+        }else if (container.equals("senquanto")){
             container = analisaEnquanto(container.read, container.token, lr);
-        }else if (container.token.equals("sleia")){
+        }else if (container.equals("sleia")){
             container = analisaLeia(container.read, container.token, lr);
-        }else if (container.token.equals("sescreva")){
+        }else if (container.equals("sescreva")){
             container = analisaEscreva(container.read, container.token, lr);
         }else container = analisaComandos(container.read, container.token, lr);
 
@@ -436,7 +439,7 @@ public class Application {
         Container container = new Container(token, r);
 
         container = analisadorLexical(container.read, lr);
-        container = analisaDeclaracaoProcedimento(container.read, lr);
+        //container = analisaDeclaracaoProcedimento(container.read, lr);
 
         return container;
     }
@@ -445,7 +448,7 @@ public class Application {
         Container container = new Container(token, r);
 
         container = analisadorLexical(container.read, lr);
-        container = analisaDeclaracaoFuncao(container.read, lr);
+        //container = analisaDeclaracaoFuncao(container.read, lr);
 
 
         return container;
@@ -522,8 +525,6 @@ public class Application {
     public static Container analisaExpressao(int r, Token token, LineNumberReader lr) throws IOException {
         Container container = new Container(token, r);
 
-        container = analisadorLexical(container.read, lr);
-
         container = analisaExpressaoSimples(container.read, container.token, lr);
         if (container.token.simbolo.equals("smaior") || container.token.simbolo.equals("smaiorig") ||
                 container.token.simbolo.equals("smenor") || container.token.simbolo.equals("smenorig")
@@ -538,13 +539,13 @@ public class Application {
     public static Container analisaExpressaoSimples(int r, Token token, LineNumberReader lr) throws IOException{
         Container container = new Container(token, r);
 
-        if (container.token.simbolo.equals("smais") || container.token.simbolo.equals("smenos")){
+        if (container.token.simbolo.equals("smais") || container.token.simbolo.equals("smenos")) {
+            container = analisadorLexical(container.read, lr);
+        }
+        container = analisaTermo(container.read, container.token, lr);
+        while (container.token.simbolo.equals("smais") || container.token.simbolo.equals("smenos") || container.token.simbolo.equals("sou")){
             container = analisadorLexical(container.read, lr);
             container = analisaTermo(container.read, container.token, lr);
-            while (container.token.simbolo.equals("smais") || container.token.simbolo.equals("smenos") || container.token.simbolo.equals("sou")){
-                container = analisadorLexical(container.read, lr);
-                container = analisaTermo(container.read, container.token, lr);
-            }
         }
 
         return container;
@@ -693,7 +694,7 @@ public class Application {
     }
 
     public static void main(String[] args) throws IOException {
-        var filep = new File("tests/lexical/teste_1.txt");
+        var filep = new File("tests/lexical/teste_4.txt");
         LineNumberReader lr = new LineNumberReader(new FileReader(filep));
         var filew = new File("test6.txt");
         BufferedWriter buffer = new BufferedWriter(new FileWriter(filew));
