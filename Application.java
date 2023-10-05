@@ -297,6 +297,8 @@ public class Application {
         }
         if (r != -1) {
             container = pegaToken(r, lr);
+        }else{
+            container.read = r;
         }
         return container;
     }
@@ -438,7 +440,7 @@ public class Application {
     public static Container analisaChamadaProcedimento(int r, Token token, LineNumberReader lr) throws IOException {
         Container container = new Container(token, r);
 
-        container = analisadorLexical(container.read, lr);
+        //container = analisadorLexical(container.read, lr);
         //container = analisaDeclaracaoProcedimento(container.read, lr);
 
         return container;
@@ -581,7 +583,7 @@ public class Application {
             }else System.out.println("erro not sfecha_parenteses");
         } else if (container.token.lexema.equals("verdadeiro") || container.token.lexema.equals("falso")) {
             container = analisadorLexical(container.read, lr);
-        }else System.out.println("erro lexema not verdadeiro ou falso");
+        }else System.out.println("erro lexema invalido");
 
         return container;
     }
@@ -668,11 +670,13 @@ public class Application {
                 if (container.token.simbolo.equals("sponto_virgula")) {
                     container = analisaBloco(container.read,lr);
                     if (container.token.simbolo.equals("sponto")) {
-                        if (container.read == -1 || container.read == 123) {
+                        int curLine = lr.getLineNumber();
+                        container = analisadorLexical(container.read, lr);
+                        if (container.read == -1 && container.token.lexema.isEmpty()) {
                             System.out.println("SUCCESS");
                         }
                         else {
-                            System.out.println("Error not EOF or comment");
+                            System.out.println("Error not EOF or comment, line: " + curLine);
                         }
                     }
                     else {
@@ -694,7 +698,7 @@ public class Application {
     }
 
     public static void main(String[] args) throws IOException {
-        var filep = new File("tests/lexical/teste_4.txt");
+        var filep = new File("tests/sintatico/sint4.txt");
         LineNumberReader lr = new LineNumberReader(new FileReader(filep));
         var filew = new File("test6.txt");
         BufferedWriter buffer = new BufferedWriter(new FileWriter(filew));

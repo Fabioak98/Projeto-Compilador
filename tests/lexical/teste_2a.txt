@@ -4,4 +4,3 @@ inicio
   
        x= 1;
 fim.
-
