@@ -1,10 +1,13 @@
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 public class Application {
     static List<Token> lista = new ArrayList<>();
-    static List<simboloCSD> tabelaSimbolos = new ArrayList<simboloCSD>();
+    //static List<SimboloCSD> tabelaSimbolos = new ArrayList<SimboloCSD>();
+
+    static Stack<SimboloCSD> tabelaSimbolos =  new Stack();
 
     /* Testing functions */
 
@@ -306,7 +309,7 @@ public class Application {
     /* Tabela de simbolos CSD */
 
     public static void insereTabela (String nome, String escopo, String tipo, String memoria) {
-        tabelaSimbolos.add(new simboloCSD(nome, escopo, tipo, memoria));
+        tabelaSimbolos.push(new SimboloCSD(nome, escopo, tipo, memoria));
     }
 
     public static void consultaTabela (String nome) {
@@ -344,14 +347,20 @@ public class Application {
         Container container = new Container(token,r);
         while(!container.token.simbolo.equals("sdoispontos")){
             if (container.equals("sidentificador")){
-                container = analisadorLexical(container.read,lr);
-                if(container.token.simbolo.equals("svirgula") || container.token.simbolo.equals("sdoispontos")){
-                    if (container.token.simbolo.equals("svirgula")){
-                        container = analisadorLexical(container.read,lr);
-                        if(container.token.simbolo.equals("sdoispontos")){
-                            System.out.println("Error not sdoispontos");
+                if(pesquisaDuplicVarTabela(container.token.lexema)){
+                    insereTabela(container.token.lexema,"variavel","","");
+                    container = analisadorLexical(container.read,lr);
+                    if(container.token.simbolo.equals("svirgula") || container.token.simbolo.equals("sdoispontos")){
+                        if (container.token.simbolo.equals("svirgula")){
+                            container = analisadorLexical(container.read,lr);
+                            if(container.token.simbolo.equals("sdoispontos")){
+                                System.out.println("Error not sdoispontos");
+                            }
                         }
                     }
+                }
+                else{
+                    System.out.println("Variavel ja declarada");
                 }
             }
         }
@@ -360,16 +369,49 @@ public class Application {
         return container;
     }
 
+    private static boolean pesquisaDuplicVarTabela(String lexema) {
+        for(SimboloCSD s : tabelaSimbolos){
+            if (s.nome.equals(lexema)){
+                return false;
+            }
+            if (s.escopo.equals("L")){
+                return true;
+            }
+        }
+        return true;
+    }
+
     public static Container analisaTipo(int r, Token token, LineNumberReader lr) throws IOException {
         Container container = new Container(token, r);
 
         if (!container.token.simbolo.equals("sinteiro") && !container.token.simbolo.equals("sbooleano")){
-            System.out.println("erro");
-        }/*else colocaTipoTabela(token.lexema)*/
+            System.out.println("erro tipo invalido");
+        }else
+            colocaTipoTabela(token.lexema);
 
         container = analisadorLexical(container.read, lr);
 
         return container;
+    }
+
+    private static void colocaTipoTabela(String lexema) {
+        for (SimboloCSD s: tabelaSimbolos){
+            if(s.tipo.equals("variavel")){
+                if(lexema.equals("inteiro")){
+                    s.tipo = "variavel inteira";
+                }
+                else{
+                    s.tipo = "variavel boleana";
+                }
+            }else if(s.tipo.equals("funcao")){
+                if(lexema.equals("inteiro")){
+                    s.tipo = "funcao inteira";
+                }
+                else{
+                    s.tipo = "funcao boleana";
+                }
+            }
+        }
     }
 
     public static Container analisaComandos(int r, Token token, LineNumberReader lr) throws IOException {
@@ -465,14 +507,25 @@ public class Application {
         if (container.token.simbolo.equals("sabre_parenteses")){
             container = analisadorLexical(container.read, lr);
             if (container.token.simbolo.equals("sidentificador")){
-                container = analisadorLexical(container.read, lr);
-                if (container.token.simbolo.equals("sfecha_parenteses")){
+                if(pesquisadeClVarTabela(container.token.lexema)){
                     container = analisadorLexical(container.read, lr);
-                }else System.out.println("erro not sfecha_parenteses");
+                    if (container.token.simbolo.equals("sfecha_parenteses")){
+                        container = analisadorLexical(container.read, lr);
+                    }else System.out.println("erro not sfecha_parenteses");
+                }
+                else System.out.println("Variavel nao declarada");
             }else System.out.println("erro not sidentificador");
         }else System.out.println("erro not sabre_parenteses");
 
         return container;
+    }
+
+    private static boolean pesquisadeClVarTabela(String lexema) {
+        var aux = tabelaSimbolos.stream().filter(t -> t.nome.equals(lexema)).findAny().orElse(null);
+        if (aux == null){
+            return false;
+        }
+        return true;
     }
 
     public static Container analisaEscreva(int r, Token token, LineNumberReader lr) throws IOException {
@@ -713,13 +766,13 @@ public class Application {
     }
 
 
-    public static class simboloCSD {
+    public static class SimboloCSD {
         String nome;
         String escopo;
         String tipo;
         String memoria;
 
-        public simboloCSD(String nome, String escopo, String tipo, String memoria) {
+        public SimboloCSD(String nome, String escopo, String tipo, String memoria) {
             this.nome = nome;
             this.escopo = escopo;
             this.tipo = tipo;
@@ -749,5 +802,6 @@ public class Application {
             this.lexema = lexema;
             this.simbolo = simbolo;
         }
+
     }
 }
