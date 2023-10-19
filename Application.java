@@ -528,6 +528,16 @@ public class Application {
         return true;
     }
 
+    private static boolean pesquisaDeclVarProcTabela(String lexema){
+        var aux = tabelaSimbolos.stream().filter(t -> t.nome.equals(lexema) && (t.tipo.equals("variavel inteira") || t.tipo.equals("variavel boleana"))).findAny().orElse(null);
+
+        if (aux == null){
+            return false;
+        }
+
+        return true;
+    }
+
     public static Container analisaEscreva(int r, Token token, LineNumberReader lr) throws IOException {
         Container container = new Container(token, r);
 
@@ -535,10 +545,12 @@ public class Application {
         if (container.token.simbolo.equals("sabre_parenteses")){
             container = analisadorLexical(container.read, lr);
             if (container.token.simbolo.equals("sidentificador")){
-                container = analisadorLexical(container.read, lr);
-                if (container.token.simbolo.equals("sfecha_parenteses")){
+                if(pesquisaDeclVarProcTabela(container.token.lexema)) {
                     container = analisadorLexical(container.read, lr);
-                }else System.out.println("erro not sfecha_parenteses");
+                    if (container.token.simbolo.equals("sfecha_parenteses")) {
+                        container = analisadorLexical(container.read, lr);
+                    } else System.out.println("erro not sfecha_parenteses");
+                }else System.out.println("nao e uma variavel");
             }else System.out.println("erro not sidentificador");
         }else System.out.println("erro not sabre_parenteses");
 
