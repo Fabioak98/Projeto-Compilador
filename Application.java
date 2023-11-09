@@ -1,7 +1,5 @@
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 public class Application {
     static List<Token> lista = new ArrayList<>();
@@ -476,7 +474,7 @@ public class Application {
         Container container = new Container(token, r);
 
         container = analisadorLexical(container.read, lr);
-        container = analisaExpressao(container.read, container.token, lr);
+        container = analisaExpressao(container, lr);
 
         return container;
     }
@@ -494,7 +492,6 @@ public class Application {
         Container container = new Container(token, r);
 
         container = analisadorLexical(container.read, lr);
-        //container = analisaDeclaracaoFuncao(container.read, lr);
 
 
         return container;
@@ -564,7 +561,7 @@ public class Application {
 
         container = analisadorLexical(container.read, lr);
 
-        container = analisaExpressao(container.read, container.token, lr);
+        container = analisaExpressao(container, lr);
         //´postfix
         //analisa == bool
         if (container.token.simbolo.equals("sfaca")){
@@ -580,7 +577,7 @@ public class Application {
 
         container = analisadorLexical(container.read, lr);
 
-        container = analisaExpressao(container.read, container.token, lr);
+        container = analisaExpressao(container, lr);
         //postfix
         //analisa tipo == bool
         if (container.token.simbolo.equals("sentao")){
@@ -595,41 +592,36 @@ public class Application {
         return  container;
     }
 
-    public static Container analisaExpressao(int r, Token token, LineNumberReader lr) throws IOException {
-        Container container = new Container(token, r);
-        container = analisaExpressaoSimples(container.read, container.token, lr);
+    public static Container analisaExpressao(Container container, LineNumberReader lr) throws IOException {
+        container = analisaExpressaoSimples(container, lr);
         if (container.token.simbolo.equals("smaior") || container.token.simbolo.equals("smaiorig") ||
                 container.token.simbolo.equals("smenor") || container.token.simbolo.equals("smenorig")
                 || container.token.simbolo.equals("sig") || container.token.simbolo.equals("sdif")){
-            //append na lista
+            container.expressao.add(container.token);
             container = analisadorLexical(container.read, lr);
-            container = analisaExpressaoSimples(container.read, container.token, lr);
+            container = analisaExpressaoSimples(container, lr);
         }
 
         return container;
     }
 
-    public static Container analisaExpressaoSimples(int r, Token token, LineNumberReader lr) throws IOException{
-        Container container = new Container(token, r);
-
+    public static Container analisaExpressaoSimples(Container container, LineNumberReader lr) throws IOException{
         if (container.token.simbolo.equals("smais") || container.token.simbolo.equals("smenos")) {
             //append lista pode ser unario
             container = analisadorLexical(container.read, lr);
         }
-        container = analisaTermo(container.read, container.token, lr);
+        container = analisaTermo(container, lr);
         while (container.token.simbolo.equals("smais") || container.token.simbolo.equals("smenos") ||
                 container.token.simbolo.equals("sou")){
             //append lista
             container = analisadorLexical(container.read, lr);
-            container = analisaTermo(container.read, container.token, lr);
+            container = analisaTermo(container, lr);
         }
 
         return container;
     }
 
-    public static Container analisaTermo(int r, Token token, LineNumberReader lr) throws IOException{
-        Container container = new Container(token, r);
-
+    public static Container analisaTermo(Container container, LineNumberReader lr) throws IOException{
         container = analisaFator(container.read, container.token, lr);
         while (container.token.simbolo.equals("smult") || container.token.simbolo.equals("sdiv") ||
                 container.token.simbolo.equals("se")){
@@ -657,7 +649,7 @@ public class Application {
         } else if (container.token.simbolo.equals("sabre_parenteses")) {
             //append lista
             container = analisadorLexical(container.read, lr);
-            container = analisaExpressao(container.read, container.token, lr);
+            container = analisaExpressao(container, lr);
             if (container.token.simbolo.equals("sfecha_parenteses")){
                 //append lista
                 container = analisadorLexical(container.read, lr);
@@ -809,10 +801,85 @@ public class Application {
         }
     }
 
+    static int Prec(String simbolo)
+    {
+        if(simbolo.equals("u-mais")|| simbolo.equals("u-menos")){
+            return 7;
+        } else if (simbolo.equals("*") || simbolo.equals("div")) {
+            return 6;
+        } else if (simbolo.equals("+") || simbolo.equals("-")) {
+            return  5;
+        } else if (simbolo.equals(">") || simbolo.equals(">=") || simbolo.equals("<") || 
+                   simbolo.equals("<=") || simbolo.equals("!=") || simbolo.equals("=")) {
+            return 4;
+        } else if (simbolo.equals("nao")) {
+            return 3;
+        }else if (simbolo.equals("e")){
+            return 2;
+        }else if (simbolo.equals("ou")){
+            return 1;
+        }else{
+            return -1;
+        }
+    }
+
+    static String infixToPostfix(List<Token> exp)
+    {
+        String result = new String("");
+
+        // Initializing empty stack
+        Deque<Token> stack
+                = new ArrayDeque<Token>();
+
+        for (Token token: exp) {
+            Token t = token;
+
+            // If the scanned character is an
+            // operand, add it to output.
+            if (t.simbolo.equals("sidentificador"))
+                result += t;
+
+            else if (t.lexema.equals("("))
+                stack.push(t);
+
+            else if (t.lexema.equals(")")) {
+                while (!stack.isEmpty()
+                        && stack.peek().equals("(")) {
+                    result += stack.peek();
+                    stack.pop();
+                }
+
+                stack.pop();
+            }
+
+            // An operator is encountered
+            else
+            {
+                while (!stack.isEmpty()
+                        && Prec(t.simbolo) <= Prec(stack.peek().simbolo)) {
+
+                    result += stack.peek();
+                    stack.pop();
+                }
+                stack.push(t);
+            }
+        }
+
+        // Pop all the operators from the stack
+        while (!stack.isEmpty()) {
+            if (stack.peek().equals("("))
+                return "Invalid Expression";
+            result += stack.peek();
+            stack.pop();
+        }
+
+        return result;
+    }
+
     public static class Container {
         Token token;
         int read;
-        //Lista <Token> expressao
+        List<Token> expressao;
 
         public Container(Token token, int read) {
             this.token = token;
