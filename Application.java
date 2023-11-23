@@ -255,6 +255,10 @@ public class Application {
         lista.add(token);
     }
 
+    public static void desempilha(){
+
+    }
+
     private static Container pegaToken(int r, LineNumberReader lr) throws IOException {
         Container container = new Container(new Token("", ""), r);
         if (isDigit(r)) {
@@ -306,8 +310,8 @@ public class Application {
 
     /* Tabela de simbolos CSD */
 
-    public static void insereTabela (String nome, String escopo, String tipo, String memoria) {
-        tabelaSimbolos.push(new SimboloCSD(nome, escopo, tipo, memoria));
+    public static void insereTabela (String nome, String tipo, String escopo, String memoria) {
+        tabelaSimbolos.push(new SimboloCSD(nome, tipo, escopo, memoria));
     }
 
     public static SimboloCSD consultaTabela (String nome) {
@@ -326,6 +330,47 @@ public class Application {
             if(csd.tipo.equals("variavel") || csd.tipo.equals("funcao")){
                 csd.tipo = csd.tipo + "-" + tipo;
             }else break;
+        }
+    }
+
+    private static boolean pesquisaDuplicVarTabela(String lexema) {
+        for (Iterator<SimboloCSD> it = tabelaSimbolos.descendingIterator(); it.hasNext();) {
+            SimboloCSD csd = it.next();
+            if (csd.nome.equals(lexema)){
+                return false;
+            }
+            if (csd.escopo.equals("L")){
+                return true;
+            }
+        }
+        return true;
+    }
+
+    private static boolean analisaTipoSem(List<Token> expressao, String tipo) {
+        Token ultimo = expressao.get(expressao.size() - 1);
+
+        if(tipo.equals("variavel-inteira") || tipo.equals("funcao-inteira")){
+            tipo = "inteira";
+        }
+        else if(tipo.equals("variavel-boleana") || tipo.equals("funcao-boleana")){
+            tipo = "boleana";
+        }
+        else {
+            System.out.println("Identificador invalido");
+            return false;
+        }
+
+        if(tipo.equals("inteira")){
+            if( ultimo.equals("smais") || ultimo.equals("smenos") || ultimo.equals("sdiv") || ultimo.equals("smult")){
+                return true;
+            }
+            else return false;
+        }
+        else{
+            if( ultimo.equals("smais") || ultimo.equals("smenos") || ultimo.equals("sdiv") || ultimo.equals("smult")){
+                return false;
+            }
+            else return true;
         }
     }
 
@@ -376,19 +421,6 @@ public class Application {
         container = analisadorLexical(container.read,lr);
         container = analisaTipo(container.read, container.token, lr);
         return container;
-    }
-
-    private static boolean pesquisaDuplicVarTabela(String lexema) {
-        for (Iterator<SimboloCSD> it = tabelaSimbolos.descendingIterator(); it.hasNext();) {
-            SimboloCSD csd = it.next();
-            if (csd.nome.equals(lexema)){
-                return false;
-            }
-            if (csd.escopo.equals("L")){
-                return true;
-            }
-        }
-        return true;
     }
 
     public static Container analisaTipo(int r, Token token, LineNumberReader lr) throws IOException {
@@ -467,33 +499,6 @@ public class Application {
         return container;
     }
 
-    private static boolean analisaTipoSem(List<Token> expressao, String tipo) {
-        Token ultimo = expressao.get(expressao.size() - 1);
-
-        if(tipo.equals("variavel-inteira") || tipo.equals("funcao-inteira")){
-            tipo = "inteira";
-        }
-        else if(tipo.equals("variavel-boleana") || tipo.equals("funcao-boleana")){
-            tipo = "boleana";
-        }
-        else {
-            System.out.println("Identificador invalido");
-            return false;
-        }
-
-        if(tipo.equals("inteira")){
-            if( ultimo.equals("smais") || ultimo.equals("smenos") || ultimo.equals("sdiv") || ultimo.equals("smult")){
-                return true;
-            }
-            else return false;
-        }
-        else{
-            if( ultimo.equals("smais") || ultimo.equals("smenos") || ultimo.equals("sdiv") || ultimo.equals("smult")){
-                return false;
-            }
-            else return true;
-        }
-    }
 
     public static Container analisaAtribuicao(int r, Token token, LineNumberReader lr) throws IOException {
         Container container = new Container(token, r);
@@ -506,8 +511,6 @@ public class Application {
 
     public static Container analisaChamadaProcedimento(int r, Token token, LineNumberReader lr) throws IOException {
         Container container = new Container(token, r);
-
-
         return container;
     }
 
@@ -630,25 +633,18 @@ public class Application {
         return container;
     }
 
-    public static boolean analisaUni(Token token){
-        var csd = consultaTabela(token.lexema);
-          if(csd.tipo.equals("variavel-inteira") || csd.tipo.equals("funcao-inteira")){
-            return true;
-          }
-          return false;
-    }
-
     public static Container analisaExpressaoSimples(Container container, LineNumberReader lr) throws IOException{
         if (container.token.simbolo.equals("smais") || container.token.simbolo.equals("smenos")) {
-            var ultimo = container.expressao.get(container.expressao.size() -1 );
             String unario;
             if(container.equals("smais")){
-                unario = "+";
+                unario = "+u";
             }else
-                unario ="-";
+                unario ="-u";
+            container.expressao.add(new Token(unario ,"sunario"));
+
             container = analisadorLexical(container.read, lr);
-            if(container.equals("snumero") || analisaUni(container.token))
-                container.expressao.add(new Token(unario + container.token.lexema,"sunario"));
+            if(container.equals("snumero") || container.equals("sidentificador"))
+                container.expressao.add(container.token);
         }
         container = analisaTermo(container, lr);
         while (container.token.simbolo.equals("smais") || container.token.simbolo.equals("smenos") ||
@@ -750,18 +746,25 @@ public class Application {
 
     private static Container analisaDeclaracaoProcedimento(int r, LineNumberReader lr) throws IOException{
         Container container = analisadorLexical(r,lr);
-        if(container.token.simbolo.equals("sidentificador")){
-            container = analisadorLexical(container.read,lr);
-            if(container.token.simbolo.equals("sponto_virgula")){
-                container = analisaBloco(container.read,lr);
+        String nivel = "L";
+        if(container.token.simbolo.equals("sidentificador")) {
+            if (!pesquisaDeclProcTabela(container.token.lexema)){
+                insereTabela(container.token.lexema,"procedimento",nivel,"");
+                container = analisadorLexical(container.read, lr);
+                if (container.token.simbolo.equals("sponto_virgula")) {
+                    container = analisaBloco(container.read, lr);
+                } else {
+                    System.out.println("Error not spontovirgula");
+                }
             }
             else{
-                System.out.println("Error not spontovirgula");
+                System.out.println("Procedimento ja declarado");
             }
         }
         else{
             System.out.println("Error not sidentificador");
         }
+        desempilha();
         return container;
     }
 
@@ -834,7 +837,7 @@ public class Application {
         String tipo;
         String memoria;
 
-        public SimboloCSD(String nome, String escopo, String tipo, String memoria) {
+        public SimboloCSD(String nome, String tipo, String escopo, String memoria) {
             this.nome = nome;
             this.escopo = escopo;
             this.tipo = tipo;
