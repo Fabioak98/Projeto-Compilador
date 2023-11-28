@@ -1,12 +1,17 @@
+import misc.Container;
+import misc.SimboloCSD;
+import misc.Token;
+
 import java.io.*;
 import java.util.*;
 
 public class Application {
     static List<Token> lista = new ArrayList<>();
-    //static List<SimboloCSD> tabelaSimbolos = new ArrayList<SimboloCSD>();
-
     static Deque<SimboloCSD> tabelaSimbolos =  new ArrayDeque<>();
-
+    static int label;
+    static int memoryPointer = 0;
+    static String labelTmp;
+    public static GeraCodigo codigo;
     /* Testing functions */
 
     private static boolean isDigit(int r) {
@@ -334,8 +339,7 @@ public class Application {
     }
 
     private static boolean pesquisaDuplicVarTabela(String lexema) {
-        for (Iterator<SimboloCSD> it = tabelaSimbolos.descendingIterator(); it.hasNext();) {
-            SimboloCSD csd = it.next();
+        for (SimboloCSD csd : tabelaSimbolos) {
             if (csd.nome.equals(lexema)){
                 return false;
             }
@@ -373,7 +377,6 @@ public class Application {
             else return true;
         }
     }
-
     /* Syntax analyzer functions */
 
     public static Container analisaEtVariaveis (int r, Token token, LineNumberReader lr) throws IOException {
@@ -399,10 +402,13 @@ public class Application {
 
     private static Container analisaVariaveis(int r, Token token, LineNumberReader lr) throws IOException{
         Container container = new Container(token,r);
+        int contador = 0;
         while(!container.token.simbolo.equals("sdoispontos")){
             if (container.equals("sidentificador")){
                 if(pesquisaDuplicVarTabela(container.token.lexema)){
-                    insereTabela(container.token.lexema,"variavel","","");
+                    memoryPointer+=1;
+                    insereTabela(container.token.lexema,"variavel","",String.valueOf(memoryPointer));
+                    contador+= 1;
                     container = analisadorLexical(container.read,lr);
                     if(container.token.simbolo.equals("svirgula") || container.token.simbolo.equals("sdoispontos")){
                         if (container.token.simbolo.equals("svirgula")){
@@ -471,6 +477,7 @@ public class Application {
             container = analisaAtribChProcedimento(container.read,container.token,lr);
         }else if (container.equals("sse")){
             container = analisaSe(container.read, container.token, lr);
+            codigo.gera(labelTmp,"NULL","","");
         }else if (container.equals("senquanto")){
             container = analisaEnquanto(container.read, container.token, lr);
         }else if (container.equals("sleia")){
@@ -584,6 +591,11 @@ public class Application {
 
     public static Container analisaEnquanto(int r, Token token, LineNumberReader lr) throws IOException {
         Container container = new Container(token, r);
+        int aux1,aux2;
+
+        aux1 = label;
+        codigo.gera("L"+label,"NULL","","");
+        label+=1;
 
         container = analisadorLexical(container.read, lr);
 
@@ -591,8 +603,16 @@ public class Application {
 
         if(analisaTipoSem(container.expressao,"variavel-boleana")){
             if (container.token.simbolo.equals("sfaca")){
+
+                aux2 = label;
+                codigo.gera("","JMP","L"+label,"");
+                label+=1;
+
                 container = analisadorLexical(container.read, lr);
                 container = analisaComandoSimples(container.read,container.token,lr);
+
+                codigo.gera("","JMP","L"+aux1,"");
+                codigo.gera("L"+aux2,"NULL","","");
             }else System.out.println("erro not sfaca");
         }else System.out.println("tipos diferentes na linha" + lr);
 
@@ -611,7 +631,12 @@ public class Application {
         if (container.token.simbolo.equals("sentao")){
             container = analisadorLexical(container.read, lr);
             container = analisaComandoSimples(container.read,container.token,lr);
+            codigo.gera("","JMP","L"+label,"");
+            labelTmp = "L"+label;
+            label+=1;
             if (container.token.simbolo.equals("ssenao")){
+                codigo.gera("L"+label, "NULL", "","");
+                label+=1;
                 container = analisadorLexical(container.read, lr);
                 container = analisaComandoSimples(container.read,container.token,lr);
             }
@@ -701,6 +726,16 @@ public class Application {
 
     public static Container analisaSubrotina(int r, Token token, LineNumberReader lr) throws IOException {
         Container container = new Container(token,r);
+
+        int auxrot = 0,flag;
+        flag = 0;
+        if(container.equals("sprocedimento") || container.equals("sfuncao")){
+            auxrot = label;
+            codigo.gera("","JMP","L"+label,"");
+            label+= 1;
+            flag=1;
+        }
+
         while(container.token.simbolo.equals("sprocedimento") || container.token.simbolo.equals("sfuncao")){
             if(container.token.simbolo.equals("sprocedimento")){
                 container = analisaDeclaracaoProcedimento(container.read,lr);
@@ -715,16 +750,30 @@ public class Application {
                 System.out.println("Error not sponto_virgula");
             }
         }
+
+        if (flag == 1){
+            codigo.gera("L"+auxrot, "NULL", "", "");
+        }
         return container;
     }
 
     private static Container analisaDeclaracaoFuncao(int r, LineNumberReader lr) throws IOException {
         Container container = analisadorLexical(r,lr);
         if(container.token.simbolo.equals("sidentificador")){
+            insereTabela(container.token.lexema,"","L","L"+label);
             container = analisadorLexical(container.read,lr);
             if (container.token.simbolo.equals("sdoispontos")){
                 container = analisadorLexical(container.read,lr);
                 if(container.token.simbolo.equals("sinteiro") || container.token.simbolo.equals("sbooleano")){
+                    if(container.equals("sinteiro")){
+                        SimboloCSD aux = tabelaSimbolos.pop();
+                        aux.tipo = "funcao-inteira";
+                        tabelaSimbolos.push(aux);
+                    }else{
+                        SimboloCSD aux = tabelaSimbolos.pop();
+                        aux.tipo = "funcao-boleana";
+                        tabelaSimbolos.push(aux);
+                    }
                     container = analisadorLexical(container.read,lr);
                     if (container.token.simbolo.equals("sponto_virgula")){
                         container = analisaBloco(container.read,lr);
@@ -748,7 +797,7 @@ public class Application {
         Container container = analisadorLexical(r,lr);
         String nivel = "L";
         if(container.token.simbolo.equals("sidentificador")) {
-            if (!pesquisaDeclProcTabela(container.token.lexema)){
+            if (!pesquisadeClVarTabela(container.token.lexema)){
                 insereTabela(container.token.lexema,"procedimento",nivel,"");
                 container = analisadorLexical(container.read, lr);
                 if (container.token.simbolo.equals("sponto_virgula")) {
@@ -777,13 +826,14 @@ public class Application {
     }
 
     public static Container analisadorSintatico(LineNumberReader lr) throws IOException {
-        int label = 1;
         int r = lr.read();
+        label = 1;
         Container container = analisadorLexical(r, lr);
         if (container.token.simbolo.equals("sprograma")) {
+            memoryPointer += 1;
             container = analisadorLexical(container.read, lr);
             if (container.token.simbolo.equals("sidentificador")) {
-                insereTabela(container.token.lexema,"nomedeprograma","","");
+                insereTabela(container.token.lexema,"nomedeprograma","",null);
                 container = analisadorLexical(container.read, lr);
                 if (container.token.simbolo.equals("sponto_virgula")) {
                     container = analisaBloco(container.read,lr);
@@ -816,11 +866,13 @@ public class Application {
     }
 
     public static void main(String[] args) throws IOException {
-        var filep = new File("tests/sintatico/sint4.txt");
+        var filep = new File("tests/gera1.txt");
         LineNumberReader lr = new LineNumberReader(new FileReader(filep));
         var filew = new File("test6.txt");
         BufferedWriter buffer = new BufferedWriter(new FileWriter(filew));
+        codigo = new GeraCodigo(filep);
         Container container = analisadorSintatico(lr);
+        codigo.closeBw();
         lr.close();
 
         for (int i = 0; i < lista.size(); i++) {
@@ -830,20 +882,6 @@ public class Application {
         buffer.close();
     }
 
-
-    public static class SimboloCSD {
-        String nome;
-        String escopo;
-        String tipo;
-        String memoria;
-
-        public SimboloCSD(String nome, String tipo, String escopo, String memoria) {
-            this.nome = nome;
-            this.escopo = escopo;
-            this.tipo = tipo;
-            this.memoria = memoria;
-        }
-    }
 
     static int Prec(Token simbolo)
     {
@@ -918,30 +956,5 @@ public class Application {
         }
 
         return exp;
-    }
-
-    public static class Container {
-        Token token;
-        int read;
-        List<Token> expressao;
-
-        public Container(Token token, int read) {
-            this.token = token;
-            this.read = read;
-        }
-
-        public Boolean equals(String simbolo){
-            return this.token.simbolo.equals(simbolo);
-        }
-    }
-
-    public static class Token {
-        String lexema;
-        String simbolo;
-        public Token(String lexema, String simbolo) {
-            this.lexema = lexema;
-            this.simbolo = simbolo;
-        }
-
     }
 }
