@@ -17,4 +17,9 @@ public class Container {
     public Boolean equals(String simbolo){
         return this.token.simbolo.equals(simbolo);
     }
+
+    public void setToken(Container container) {
+        this.token = container.token;
+        this.read = container.read;
+    }
 }
