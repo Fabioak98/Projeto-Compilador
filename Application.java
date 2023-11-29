@@ -375,11 +375,16 @@ public class Application {
                 case "smenor" ->{codigo.gera("","CME","","");}
                 case "smenorig" ->{codigo.gera("","CMEQ","","");}
                 case "sdif" ->{codigo.gera("","CDIF","","");}
+                case "se" -> {codigo.gera("","AND","","");}
+                case "sou" -> {codigo.gera("","OR","","");}
+                case "snao" -> {codigo.gera("","INV","","");}
+                case "sverdadeiro" -> {codigo.gera("","LDC","1","");}
+                case "sfalso" -> {codigo.gera("","LDC","0","");}
                 default -> {
                     if(t.simbolo.equals("sidentificador")){
                         SimboloCSD csd = consultaTabela(t.lexema);
                         if(csd != null){
-                            if(csd.tipo.equals("variavel-inteiro") || csd.tipo.equals("variavel-boleano")){
+                            if(csd.tipo.equals("variavel-inteiro") || csd.tipo.equals("variavel-booleano")){
                                 codigo.gera("","LDV",csd.memoria,"");
                             }else{
                                 codigo.gera("","CALL", "R"+ csd.memoria, "");
@@ -404,7 +409,7 @@ public class Application {
         if(tipo.equals("variavel-inteiro") || tipo.equals("funcao-inteira")){
             tipo = "inteira";
         }
-        else if(tipo.equals("variavel-boleana") || tipo.equals("funcao-boleana")){
+        else if(tipo.equals("variavel-booleano") || tipo.equals("funcao-boleana")){
             tipo = "boleana";
         }
         else {
@@ -425,8 +430,8 @@ public class Application {
             }
             else{
                 if(csd != null && (csd.tipo.equals("funcao-inteira") || csd.tipo.equals("variavel-inteiro"))){
-                    return true;
-                }else return false;
+                    return false;
+                }else return true;
             }
         }
     }
@@ -484,19 +489,18 @@ public class Application {
             }
         }
         container.setToken(analisadorLexical(container.read, lr));
-        container = analisaTipo(container.read, container.token, lr);
+        container = analisaTipo(container, lr);
 
         codigo.gera("","ALLOC",String.valueOf(temp),String.valueOf(contador));
         return container;
     }
 
-    public static Container analisaTipo(int r, Token token, LineNumberReader lr) throws IOException {
-        Container container = new Container(token, r);
+    public static Container analisaTipo(Container container, LineNumberReader lr) throws IOException {
 
         if (!container.token.simbolo.equals("sinteiro") && !container.token.simbolo.equals("sbooleano")){
             System.out.println("erro tipo invalido");
         }else
-            colocaTipoTabela(token.lexema);
+            colocaTipoTabela(container.token.lexema);
 
         container.setToken(analisadorLexical(container.read, lr));
 
@@ -504,17 +508,16 @@ public class Application {
     }
 
 
-    public static Container analisaComandos(int r, Token token, LineNumberReader lr) throws IOException {
-        Container container = new Container(token, r);
+    public static Container analisaComandos(Container container, LineNumberReader lr) throws IOException {
 
         if (container.token.simbolo.equals("sinicio")){
             container.setToken(analisadorLexical(container.read, lr));
-            container = analisaComandoSimples(container.read,container.token,lr);
+            container = analisaComandoSimples(container,lr);
             while(!container.equals("sfim")){
                 if(container.token.simbolo.equals("sponto_virgula")){
                     container.setToken(analisadorLexical(container.read, lr));
                     if(!container.equals("sfim")){
-                        container = analisaComandoSimples(container.read,container.token,lr);
+                        container = analisaComandoSimples(container,lr);
                     }
                 }
                 else{
@@ -531,8 +534,7 @@ public class Application {
         return container;
     }
 
-    public static Container analisaComandoSimples(int r, Token token, LineNumberReader lr) throws IOException {
-        Container container = new Container(token, r);
+    public static Container analisaComandoSimples(Container container, LineNumberReader lr) throws IOException {
 
         if (container.token.simbolo.equals("sidentificador")){
             container = analisaAtribChProcedimento(container,lr);
@@ -544,7 +546,7 @@ public class Application {
             container = analisaLeia(container, lr);
         }else if (container.equals("sescreva")){
             container = analisaEscreva(container, lr);
-        }else container = analisaComandos(container.read, container.token, lr);
+        }else container = analisaComandos(container, lr);
 
         return container;
     }
@@ -560,6 +562,7 @@ public class Application {
                 System.out.println("Tipo incompativeis");
             }
             codigo.gera("","STR",csd.memoria,"");
+            container.expressao = new ArrayList<>();
         }else {
             SimboloCSD csd = consultaTabela(b.lexema);
             if(csd != null && csd.tipo.equals("procedimento")){
@@ -632,7 +635,7 @@ public class Application {
     }
 
     private static boolean pesquisaDeclVarProcTabela(String lexema){
-        var aux = tabelaSimbolos.stream().filter(t -> t.nome.equals(lexema) && (t.tipo.equals("variavel-inteiro") || t.tipo.equals("variavel-boleana"))).findAny().orElse(null);
+        var aux = tabelaSimbolos.stream().filter(t -> t.nome.equals(lexema) && (t.tipo.equals("variavel-inteiro") || t.tipo.equals("variavel-booleano"))).findAny().orElse(null);
 
         if (aux == null){
             return false;
@@ -679,15 +682,15 @@ public class Application {
 
         geraCodigoExpressao(container.expressao);
 
-        if(analisaTipoSem(container.expressao,"variavel-boleana")){
+        if(analisaTipoSem(container.expressao,"variavel-booleano")){
             if (container.token.simbolo.equals("sfaca")){
 
                 aux2 = label;
-                codigo.gera("","JMP","L"+label,"");
+                codigo.gera("","JMPF","L"+label,"");
                 label+=1;
 
                 container.setToken(analisadorLexical(container.read, lr));
-                container = analisaComandoSimples(container.read,container.token,lr);
+                container = analisaComandoSimples(container,lr);
 
                 codigo.gera("","JMP","L"+aux1,"");
                 codigo.gera("L"+aux2,"NULL","","");
@@ -707,13 +710,13 @@ public class Application {
         if (container.token.simbolo.equals("sentao")){
             codigo.gera("","JMPF","L"+label,"");
             container.setToken(analisadorLexical(container.read, lr));
-            container = analisaComandoSimples(container.read,container.token,lr);
+            container = analisaComandoSimples(container,lr);
             codigo.gera("","JMP","L"+(label+1),"");
             if (container.token.simbolo.equals("ssenao")){
                 codigo.gera("L"+label, "NULL", "","");
                 label+=1;
                 container.setToken(analisadorLexical(container.read, lr));
-                container = analisaComandoSimples(container.read,container.token,lr);
+                container = analisaComandoSimples(container,lr);
             }
         }else System.out.println("erro not sentao");
 
@@ -800,8 +803,7 @@ public class Application {
         return container;
     }
 
-    public static Container analisaSubrotina(int r, Token token, LineNumberReader lr) throws IOException {
-        Container container = new Container(token,r);
+    public static Container analisaSubrotina(Container container, LineNumberReader lr) throws IOException {
 
         int auxrot = 0,flag;
         flag = 0;
@@ -900,8 +902,8 @@ public class Application {
     public static Container analisaBloco (int r, LineNumberReader lr) throws IOException {
         Container container = analisadorLexical(r, lr);
         container = analisaEtVariaveis(container,lr);//analisa_et_variaveis
-        container = analisaSubrotina(container.read,container.token,lr);//analisa_subrotinas
-        container = analisaComandos(container.read,container.token,lr);//analisa_comandos
+        container = analisaSubrotina(container,lr);//analisa_subrotinas
+        container = analisaComandos(container,lr);//analisa_comandos
         return container;
     }
 
@@ -947,7 +949,7 @@ public class Application {
     }
 
     public static void main(String[] args) throws IOException {
-        var filep = new File("tests/gera1.txt");
+        var filep = new File("tests/sintatico/sint1.txt");
         LineNumberReader lr = new LineNumberReader(new FileReader(filep));
         codigo = new GeraCodigo(filep);
         Container container = analisadorSintatico(lr);
@@ -964,50 +966,56 @@ public class Application {
     }
 
 
-    static int Prec(Token simbolo)
+    static int Prec(Token token)
     {
-        if(simbolo.equals("sunario")){
+        if(token.simbolo.equals("sunario")){
             return 7;
-        } else if (simbolo.equals("smult") || simbolo.equals("div")) {
+        } else if (token.simbolo.equals("smult") || token.simbolo.equals("sdiv")) {
             return 6;
-        } else if (simbolo.equals("smais") || simbolo.equals("smenos")) {
+        } else if (token.simbolo.equals("smais") || token.simbolo.equals("smenos")) {
             return  5;
-        } else if (simbolo.equals("smaior") || simbolo.equals("smaiorig") || simbolo.equals("smenor") ||
-                   simbolo.equals("smaiorig") || simbolo.equals("sdif") || simbolo.equals("sigual")) {
+        } else if (token.simbolo.equals("smaior") || token.simbolo.equals("smaiorig") || token.simbolo.equals("smenor") ||
+                token.simbolo.equals("smenorig") || token.simbolo.equals("sdif") || token.simbolo.equals("sigual")) {
             return 4;
-        } else if (simbolo.equals("snao")) {
+        } else if (token.simbolo.equals("snao")) {
             return 3;
-        }else if (simbolo.equals("se")){
+        }else if (token.simbolo.equals("se")){
             return 2;
-        }else if (simbolo.equals("sou")){
+        }else if (token.simbolo.equals("sou")){
             return 1;
         }else{
             return -1;
         }
     }
 
-    static List<Token> infixToPostfix(List<Token> exp)
+    public static List<Token> infixToPostfix(List<Token> exp)
     {
+        // Initializing empty String for result
         List<Token> result = new ArrayList<>();
 
         // Initializing empty stack
         Deque<Token> stack
                 = new ArrayDeque<Token>();
 
-        for (Token token: exp) {
-            Token t = token;
+        for (Token t: exp) {
 
             // If the scanned character is an
             // operand, add it to output.
-            if (t.simbolo.equals("sidentificador") || t.simbolo.equals("snumero"))
+            if (t.simbolo.equals("sidentificador") || t.simbolo.equals("snumero") ||
+                t.simbolo.equals("sverdadeiro") || t.simbolo.equals("sfalso"))
                 result.add(t);
 
+                // If the scanned character is an '(',
+                // push it to the stack.
             else if (t.lexema.equals("("))
                 stack.push(t);
 
+                // If the scanned character is an ')',
+                // pop and output from the stack
+                // until an '(' is encountered.
             else if (t.lexema.equals(")")) {
                 while (!stack.isEmpty()
-                        && stack.peek().equals("(")) {
+                        && !stack.peek().lexema.equals("(")) {
                     result.add(stack.peek());
                     stack.pop();
                 }
@@ -1030,8 +1038,8 @@ public class Application {
 
         // Pop all the operators from the stack
         while (!stack.isEmpty()) {
-            if (stack.peek().equals("("))
-                throw new RuntimeException("Invalid Expression");
+            if (stack.peek().lexema.equals("("))
+                System.out.println("Invalid Expression");
             result.add(stack.peek());
             stack.pop();
         }
