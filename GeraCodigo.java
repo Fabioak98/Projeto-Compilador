@@ -6,7 +6,12 @@ import java.io.IOException;
 public class GeraCodigo {
     private BufferedWriter bw;
     public GeraCodigo(File filename) throws IOException {
-        File file = new File(filename.getPath() + ".obj");
+        String fname = filename.getName();
+        int pos = fname.lastIndexOf(".");
+        if (pos > 0) {
+            fname = fname.substring(0, pos);
+        }
+        File file = new File(fname + ".obj");
 
         if(file.exists())
             file.delete();
