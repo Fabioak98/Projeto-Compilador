@@ -5,11 +5,12 @@ public class Instrucao {
     private String comando;
     private String parameter1;
     private String parameter2;
+
     public Instrucao(String line) {
-        this.label = line.substring(0,3).strip();
-        this.comando = line.substring(4,11).strip();
-        this.parameter1 = line.substring(12,15).strip();
-        this.parameter2 = line.substring(16,19).strip();
+        this.label = line.substring(0, 3).strip();
+        this.comando = line.substring(4, 11).strip();
+        this.parameter1 = line.substring(12, 15).strip();
+        this.parameter2 = line.substring(16, 19).strip();
 
     }
 
